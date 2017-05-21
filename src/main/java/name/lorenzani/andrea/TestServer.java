@@ -39,8 +39,10 @@ public class TestServer {
             } catch (InterruptedException e) {
             }
 
-            ServerTester tester = new ServerTester(ImmutableMap.of("Netty", new NettyClient("http://localhost", 9999),
-                    "GRPC", new GRPCClient("localhost", 9998)));
+            String remoteaddr = "80.43.182.93";
+
+            ServerTester tester = new ServerTester(ImmutableMap.of("Netty", new NettyClient("http://"+remoteaddr, 9999),
+                    "GRPC", new GRPCClient(remoteaddr, 9998)));
             tester.startSuite();
         }
     }

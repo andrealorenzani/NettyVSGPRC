@@ -125,9 +125,9 @@ public class ServerTester {
         System.out.println("------------------------------------");
         testWithDimensions(5000, 50000);
         System.out.println("------------------------------------");
-        System.out.println("Starting with 10k long messages");
+        System.out.println("Starting with 100 long messages");
         System.out.println("------------------------------------");
-        testWithDimensions(1000000, 1000);
+        testWithDimensions(1000000, 100);
         System.out.println("------------------------------------");
         System.out.println("Fuck off, let's send 10 times the bible");
         System.out.println("------------------------------------");

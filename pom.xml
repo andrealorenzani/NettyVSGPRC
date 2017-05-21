@@ -33,18 +33,18 @@
                     <forkMode>once</forkMode>
                     <argLine>-Xms2048m -Xmx4096</argLine>
                 </configuration>
-            </plugin>
+            </plugin -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <configuration>
                     <mainClass>name.lorenzani.andrea.TestServer</mainClass>
-                    <environmentVariable>
+                    <!-- environmentVariable>
                         <MAVEN_OPTS>-Xms1024m -Xmx5000m -XX:MaxPermSize=1024m -XX:+CMSClassUnloadingEnabled</MAVEN_OPTS>
-                    </environmentVariable>
+                    </environmentVariable -->
                 </configuration>
-            </plugin -->
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
