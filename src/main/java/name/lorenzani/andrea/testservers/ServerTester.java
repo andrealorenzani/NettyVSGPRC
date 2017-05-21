@@ -49,8 +49,10 @@ public class ServerTester {
             if(time < min) min = time;
             total = total + time;
             times.add(stop-start);
+            System.out.print(".");
         }
         times.sort(Long::compareTo);
+        System.out.println();
         System.out.println("===============================");
         System.out.println("Client name: "+client.getName());
         System.out.println("Msg sents: "+msgs.size());
@@ -111,27 +113,27 @@ public class ServerTester {
         System.out.println("------------------------------------");
         System.out.println("Starting with 2500 small messages");
         System.out.println("------------------------------------");
-        testWithDimensions(100, 2500);
+        testWithDimensions(100, 25);
         System.out.println("------------------------------------");
         System.out.println("Starting with 25000 small messages");
         System.out.println("------------------------------------");
-        testWithDimensions(100, 25000);
+        testWithDimensions(100, 250);
         System.out.println("------------------------------------");
         System.out.println("Starting with 2500 medium messages");
         System.out.println("------------------------------------");
-        testWithDimensions(5000, 2500);
+        testWithDimensions(5000, 25);
         System.out.println("------------------------------------");
         System.out.println("Starting with 50000 medium messages");
         System.out.println("------------------------------------");
-        testWithDimensions(5000, 50000);
+        testWithDimensions(5000, 500);
         System.out.println("------------------------------------");
         System.out.println("Starting with 100 long messages");
         System.out.println("------------------------------------");
-        testWithDimensions(1000000, 100);
+        testWithDimensions(1000000, 10);
         System.out.println("------------------------------------");
         System.out.println("Fuck off, let's send 10 times the bible");
         System.out.println("------------------------------------");
-        testWithFile("bible.txt", 10);
+        testWithFile("bible.txt", 1);
     }
 
 }

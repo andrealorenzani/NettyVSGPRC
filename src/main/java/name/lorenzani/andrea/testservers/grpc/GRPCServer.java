@@ -94,6 +94,7 @@ public class GRPCServer {
             MsgReply reply = MsgReply.newBuilder().setEcho(request.getContent()).build();
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
+            System.out.print(".");
         }
     }
 }
