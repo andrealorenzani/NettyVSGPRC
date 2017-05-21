@@ -10,13 +10,9 @@ import java.net.URL;
 
 public class NettyClient implements IClient{
 
-    private final String host;
-    private final int port;
     private URL obj;
 
     public NettyClient(String host, int port){
-        this.host = host;
-        this.port = port;
         try {
             this.obj = new URL(host + ":" + port);
         } catch (Exception e) {

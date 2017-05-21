@@ -37,18 +37,16 @@ import io.grpc.StatusRuntimeException;
 import name.lorenzani.andrea.testservers.IClient;
 
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /**
  * A simple client that requests a greeting from the {@link GRPCServer}.
  */
 public class GRPCClient implements IClient{
-  private static final Logger logger = Logger.getLogger(GRPCClient.class.getName());
 
   private final ManagedChannel channel;
   private final MessageSenderGrpc.MessageSenderBlockingStub blockingStub;
 
-  /** Construct client connecting to HelloWorld server at {@code host:port}. */
+  /** Construct client connecting to GRPC server at {@code host:port}. */
   public GRPCClient(String host, int port) {
     this(ManagedChannelBuilder.forAddress(host, port)
         // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
@@ -65,7 +63,6 @@ public class GRPCClient implements IClient{
     channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
   }
 
-  /** Say hello to server. */
   public boolean sendPost(String content) throws Exception {
     if(content.length() > 4194000) content = content.substring(4194000);
     MsgRequest request = MsgRequest.newBuilder().setContent(content).build();

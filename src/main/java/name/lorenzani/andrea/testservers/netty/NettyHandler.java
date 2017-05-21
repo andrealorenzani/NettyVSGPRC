@@ -69,10 +69,10 @@ public class NettyHandler extends SimpleChannelInboundHandler<Object> {
                 if (!writeResponse(trailer, ctx)) {
                     // If keep-alive is off, close the connection once the content is fully written.
                     ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-                    System.out.print("*");
                 }
             }
         }
+        System.out.print("*");
     }
 
     private boolean writeResponse(HttpObject currentObj, ChannelHandlerContext ctx) {

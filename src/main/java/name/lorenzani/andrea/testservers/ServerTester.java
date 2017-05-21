@@ -7,20 +7,23 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public class ServerTester {
 
-    private final Map<String, IClient> clients;
+    private final List<IClient> clients;
 
-    public ServerTester(Map<String, IClient> clients){
+    public ServerTester(List<IClient> clients){
         this.clients = clients;
     }
 
     private void warmup(IClient client){
-        for(int i = 0; i < 1000; i++){
+        /***
+         * This should warmup the JVM, meaning that it triggers every optimization
+         * on the code ever. I don't think it is necessary, but someone complained...
+         */
+        for(int i = 0; i < 100; i++){
             String warmUpStr = RandomStringUtils.random(20);
             try{
                 client.sendPost(warmUpStr);
@@ -49,7 +52,6 @@ public class ServerTester {
             if(time < min) min = time;
             total = total + time;
             times.add(stop-start);
-            System.out.print(".");
         }
         times.sort(Long::compareTo);
         System.out.println();
@@ -75,11 +77,7 @@ public class ServerTester {
         System.out.println("***********************************");
         System.out.println("STARTING "+nmessages+" TESTS OF SIZE "+lenght);
         System.out.println("***********************************");
-        clients.entrySet().forEach(nameClient -> {
-            warmup(nameClient.getValue());
-            System.out.println("*** "+nameClient.getKey()+" ***");
-            test(nameClient.getValue(), messages);
-        });
+        startTest(messages);
     }
 
     private void testWithFile(String filePath, int nmessages){
@@ -102,39 +100,34 @@ public class ServerTester {
         System.out.println("***********************************");
         System.out.println("STARTING "+nmessages+" TESTS OF "+filePath+" (size "+messages.get(0).length()+")");
         System.out.println("***********************************");
-        clients.entrySet().forEach(nameClient -> {
-            warmup(nameClient.getValue());
-            System.out.println("*** "+nameClient.getKey()+" ***");
-            test(nameClient.getValue(), messages);
+        startTest(messages);
+    }
+
+    private void startTest(List<String> messages) {
+        clients.forEach(nameClient -> {
+            warmup(nameClient);
+            System.out.println("*** "+nameClient.getName()+" ***");
+            test(nameClient, messages);
         });
     }
 
+    private void startSuite(int length, int nmsg) {
+        System.out.println("------------------------------------");
+        System.out.println("Starting with "+nmsg+" messages of "+length+" characters");
+        System.out.println("------------------------------------");
+        testWithDimensions(length, nmsg);
+    }
+
     public void startSuite(){
-        /*System.out.println("------------------------------------");
-        System.out.println("Starting with 2500 small messages");
+        startSuite(100, 2500);
+        startSuite(100, 25000);
+        startSuite(5000, 2500);
+        startSuite(5000, 50000);
+        startSuite(100000, 100);
         System.out.println("------------------------------------");
-        testWithDimensions(100, 25);
+        System.out.println("Send 10 times the bible");
         System.out.println("------------------------------------");
-        System.out.println("Starting with 25000 small messages");
-        System.out.println("------------------------------------");
-        testWithDimensions(100, 250);
-        System.out.println("------------------------------------");
-        System.out.println("Starting with 2500 medium messages");
-        System.out.println("------------------------------------");
-        testWithDimensions(5000, 25);
-        System.out.println("------------------------------------");
-        System.out.println("Starting with 50000 medium messages");
-        System.out.println("------------------------------------");
-        testWithDimensions(5000, 500);
-        System.out.println("------------------------------------");
-        System.out.println("Starting with 100 long messages");
-        System.out.println("------------------------------------");
-        testWithDimensions(1000000, 10);
-        System.out.println("------------------------------------");
-        System.out.println("Fuck off, let's send 10 times the bible");
-        System.out.println("------------------------------------");
-        */
-        testWithFile("bible.txt", 1);
+        testWithFile("bible.txt", 10);
     }
 
 }
