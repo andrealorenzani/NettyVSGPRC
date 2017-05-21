@@ -33,7 +33,7 @@ public class TestServer {
                 }
             });
         }
-        if (args.length > 0 || args[0].equals("both")) {
+        if (args.length > 0) {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
