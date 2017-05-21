@@ -129,11 +129,11 @@ public class ServerTester {
         System.out.println("------------------------------------");
         System.out.println("Starting with 100 long messages");
         System.out.println("------------------------------------");
-        */
         testWithDimensions(1000000, 10);
         System.out.println("------------------------------------");
         System.out.println("Fuck off, let's send 10 times the bible");
         System.out.println("------------------------------------");
+        */
         testWithFile("bible.txt", 1);
     }
 
