@@ -67,6 +67,7 @@ public class GRPCClient implements IClient{
 
   /** Say hello to server. */
   public boolean sendPost(String content) throws Exception {
+    if(content.length() > 4194000) content = content.substring(4194000);
     MsgRequest request = MsgRequest.newBuilder().setContent(content).build();
     MsgReply response;
     try {

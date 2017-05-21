@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -99,7 +100,7 @@ public class ServerTester {
                 messages.add(singleMsg);
         }
         System.out.println("***********************************");
-        System.out.println("STARTING "+nmessages+" TESTS OF "+filePath);
+        System.out.println("STARTING "+nmessages+" TESTS OF "+filePath+" (size "+messages.get(0).length()+")");
         System.out.println("***********************************");
         clients.entrySet().forEach(nameClient -> {
             warmup(nameClient.getValue());

@@ -27,6 +27,7 @@ public class NettyClient implements IClient{
 
     // HTTP POST request
     public boolean sendPost(String content) throws Exception {
+        if(content.length()>4194000) content=content.substring(4194000);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
         //add reuqest header
