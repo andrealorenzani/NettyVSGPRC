@@ -3,7 +3,6 @@ package name.lorenzani.andrea.testservers;
 import org.apache.commons.lang.RandomStringUtils;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -85,15 +84,15 @@ public class ServerTester {
     private void testWithFile(String filePath, int nmessages){
         List<String> messages = new ArrayList<>(nmessages);
         String singleMsg = null;
-            File file = new File(filePath);
             try {
                 StringBuilder fileStr = new StringBuilder();
-                BufferedReader content = Files.newBufferedReader(Paths.get(file.toURI()));
+                BufferedReader content = Files.newBufferedReader(Paths.get(".", filePath));
                 content.lines().forEach(fileStr::append);
                 singleMsg = fileStr.toString();
             }
             catch(IOException e){
-                System.out.println("Exception reading file "+file);
+                System.out.println("Exception reading file "+filePath);
+                e.printStackTrace();
                 singleMsg = filePath;
             }
         for(int i=0; i<nmessages; i++) {
@@ -110,7 +109,7 @@ public class ServerTester {
     }
 
     public void startSuite(){
-        System.out.println("------------------------------------");
+        /*System.out.println("------------------------------------");
         System.out.println("Starting with 2500 small messages");
         System.out.println("------------------------------------");
         testWithDimensions(100, 25);
@@ -129,6 +128,7 @@ public class ServerTester {
         System.out.println("------------------------------------");
         System.out.println("Starting with 100 long messages");
         System.out.println("------------------------------------");
+        */
         testWithDimensions(1000000, 10);
         System.out.println("------------------------------------");
         System.out.println("Fuck off, let's send 10 times the bible");

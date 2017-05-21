@@ -12,22 +12,26 @@ public class NettyClient implements IClient{
 
     private final String host;
     private final int port;
+    private URL obj;
 
     public NettyClient(String host, int port){
         this.host = host;
         this.port = port;
+        try {
+            this.obj = new URL(host + ":" + port);
+        } catch (Exception e) {
+            obj = null;
+            e.printStackTrace();
+        }
     }
 
     // HTTP POST request
     public boolean sendPost(String content) throws Exception {
-        String url = host+":"+port;
-        URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
         //add reuqest header
         con.setRequestMethod("POST");
         con.setRequestProperty("User-Agent", "NettyClient");
-        con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
 
         // Send post request
         con.setDoOutput(true);
@@ -41,7 +45,7 @@ public class NettyClient implements IClient{
         BufferedReader in = new BufferedReader(
                 new InputStreamReader(con.getInputStream()));
         String inputLine;
-        StringBuffer response = new StringBuffer();
+        StringBuilder response = new StringBuilder();
 
         while ((inputLine = in.readLine()) != null) {
             response.append(inputLine);
