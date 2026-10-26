@@ -1,73 +1,55 @@
-/***
-*   Copyright 2017 Andrea Lorenzani
-*
-*   Licensed under the Apache License, Version 2.0 (the "License");
-*   you may not use this file except in compliance with the License.
-*   You may obtain a copy of the License at
-*
-*       http://www.apache.org/licenses/LICENSE-2.0
-*
-*   Unless required by applicable law or agreed to in writing, software
-*   distributed under the License is distributed on an "AS IS" BASIS,
-*   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*   See the License for the specific language governing permissions and
-*   limitations under the License.
-*
-***/
-
 package name.lorenzani.andrea.testservers.netty;
-
-// Taken http://netty.io/4.0/xref/io/netty/example/http/snoop/package-summary.html
-
- /*
-   * Copyright 2012 The Netty Project
-   *
-   * The Netty Project licenses this file to you under the Apache License,
-   * version 2.0 (the "License"); you may not use this file except in compliance
-   * with the License. You may obtain a copy of the License at:
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-   * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-   * License for the specific language governing permissions and limitations
-   * under the License.
-   */
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
 
-import java.util.Arrays;
+import java.net.InetSocketAddress;
 
-/**
- * An HTTP server that sends back the content of the received HTTP request
- * in a pretty plaintext form.
- */
-public final class NettyServer {
+/** An HTTP server that answers every request with the body of the request. */
+public final class NettyServer implements AutoCloseable {
 
-    public static void main(String[] args) throws Exception {
-        int argPort = Arrays.asList(args).indexOf("netty.port");
-        int port = (argPort != -1) ? Integer.parseInt(args[argPort]) : 9999;
+    static final int MAX_BODY_BYTES = 16 * 1024 * 1024;
 
-        // Configure the server.
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
-        try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .childHandler(new NettyInitializer());
+    private final EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
+    private final EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+    private Channel channel;
 
-            Channel ch = b.bind(port).sync().channel();
+    /** Binds to {@code port} (0 picks a free one) and returns the port actually used. */
+    public int start(int port) throws InterruptedException {
+        channel = new ServerBootstrap()
+                .group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) {
+                        ch.pipeline().addLast(
+                                new HttpServerCodec(),
+                                new HttpObjectAggregator(MAX_BODY_BYTES),
+                                new NettyHandler());
+                    }
+                })
+                .bind(port).sync().channel();
+        return ((InetSocketAddress) channel.localAddress()).getPort();
+    }
 
-            ch.closeFuture().sync();
-        } finally {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
+    public void awaitTermination() throws InterruptedException {
+        channel.closeFuture().sync();
+    }
+
+    @Override
+    public void close() {
+        if (channel != null) {
+            channel.close().syncUninterruptibly();
         }
+        bossGroup.shutdownGracefully().syncUninterruptibly();
+        workerGroup.shutdownGracefully().syncUninterruptibly();
     }
 }

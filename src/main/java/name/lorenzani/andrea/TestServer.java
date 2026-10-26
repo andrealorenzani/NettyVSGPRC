@@ -1,23 +1,5 @@
-/***
-*   Copyright 2017 Andrea Lorenzani
-*
-*   Licensed under the Apache License, Version 2.0 (the "License");
-*   you may not use this file except in compliance with the License.
-*   You may obtain a copy of the License at
-*
-*       http://www.apache.org/licenses/LICENSE-2.0
-*
-*   Unless required by applicable law or agreed to in writing, software
-*   distributed under the License is distributed on an "AS IS" BASIS,
-*   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*   See the License for the specific language governing permissions and
-*   limitations under the License.
-*
-***/
-
 package name.lorenzani.andrea;
 
-import com.google.common.collect.ImmutableMap;
 import name.lorenzani.andrea.testservers.IClient;
 import name.lorenzani.andrea.testservers.ServerTester;
 import name.lorenzani.andrea.testservers.grpc.GRPCClient;
@@ -25,50 +7,55 @@ import name.lorenzani.andrea.testservers.grpc.GRPCServer;
 import name.lorenzani.andrea.testservers.netty.NettyClient;
 import name.lorenzani.andrea.testservers.netty.NettyServer;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
-public class TestServer {
-    public static void main(String[] args) {
-        // java -jar <jar> both runs both the server and the tests on the same machine
-        if (args.length == 0 || args[0].equals("both")) {
-            ExecutorService executor = Executors.newFixedThreadPool(12);
-            executor.submit(() -> {
-                String threadName = Thread.currentThread().getName();
-                System.out.println("Starting Netty on thread " + threadName + "...");
-                try {
-                    NettyServer.main(args);
-                } catch (Exception e) {
-                    e.printStackTrace();
+/**
+ * Usage: {@code java -jar test-webservers.jar [both|server|client] [host]}
+ *
+ * <ul>
+ *   <li>{@code both} (default): start both servers and benchmark them on localhost</li>
+ *   <li>{@code server}: only start the servers</li>
+ *   <li>{@code client <host>}: only run the benchmark against the servers on {@code host}</li>
+ * </ul>
+ */
+public final class TestServer {
+
+    static final int NETTY_PORT = 9999;
+    static final int GRPC_PORT = 9998;
+
+    private TestServer() {
+    }
+
+    public static void main(String[] args) throws Exception {
+        String mode = args.length > 0 ? args[0] : "both";
+        String host = args.length > 1 ? args[1] : "localhost";
+        switch (mode) {
+            case "both" -> {
+                try (var netty = new NettyServer(); var grpc = new GRPCServer()) {
+                    netty.start(NETTY_PORT);
+                    grpc.start(GRPC_PORT);
+                    runBenchmark("localhost");
                 }
-            });
-            executor.submit(() -> {
-                String threadName = Thread.currentThread().getName();
-                System.out.println("Starting GRPC on thread " + threadName + "...");
-                try {
-                    GRPCServer.main(args);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-        if (args.length > 0) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
             }
-            List<String> arg = Arrays.asList(args).stream().collect(Collectors.toList());
-            arg.remove("both");
-            String remoteaddr = (arg.size() > 0)? arg.get(0) : "localhost";
+            case "server" -> {
+                try (var netty = new NettyServer(); var grpc = new GRPCServer()) {
+                    System.out.println("Netty listening on " + netty.start(NETTY_PORT));
+                    System.out.println("gRPC listening on " + grpc.start(GRPC_PORT));
+                    grpc.awaitTermination();
+                }
+            }
+            case "client" -> runBenchmark(host);
+            default -> {
+                System.err.println("Usage: [both|server|client] [host]");
+                System.exit(1);
+            }
+        }
+    }
 
-            ServerTester tester = new ServerTester(Arrays.asList(new NettyClient("http://"+remoteaddr, 9999),
-                    new GRPCClient(remoteaddr, 9998)));
-            tester.startSuite();
+    private static void runBenchmark(String host) throws Exception {
+        try (var netty = new NettyClient(host, NETTY_PORT); var grpc = new GRPCClient(host, GRPC_PORT)) {
+            new ServerTester(List.<IClient>of(netty, grpc)).startSuite(Path.of("bible.txt"));
         }
     }
 }

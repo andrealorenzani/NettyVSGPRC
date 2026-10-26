@@ -1,136 +1,31 @@
-/***
-*   Copyright 2017 Andrea Lorenzani
-*
-*   Licensed under the Apache License, Version 2.0 (the "License");
-*   you may not use this file except in compliance with the License.
-*   You may obtain a copy of the License at
-*
-*       http://www.apache.org/licenses/LICENSE-2.0
-*
-*   Unless required by applicable law or agreed to in writing, software
-*   distributed under the License is distributed on an "AS IS" BASIS,
-*   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*   See the License for the specific language governing permissions and
-*   limitations under the License.
-*
-***/
-
 package name.lorenzani.andrea.testservers.netty;
 
-// Taken http://netty.io/4.0/xref/io/netty/example/http/snoop/package-summary.html
-
- /*
-   * Copyright 2012 The Netty Project
-   *
-   * The Netty Project licenses this file to you under the Apache License,
-   * version 2.0 (the "License"); you may not use this file except in compliance
-   * with the License. You may obtain a copy of the License at:
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-   * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-   * License for the specific language governing permissions and limitations
-   * under the License.
-  */
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.*;
-import io.netty.util.CharsetUtil;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
 
-import java.util.Set;
-
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-
-public class NettyHandler extends SimpleChannelInboundHandler<Object> {
-
-    private HttpRequest request;
-    /**
-     * Buffer that stores the response content
-     */
-    private final StringBuilder buf = new StringBuilder();
+/** Echoes the body of each (already aggregated) request back to the caller. */
+class NettyHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) {
-        ctx.flush();
-    }
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
+        var status = request.decoderResult().isSuccess() ? HttpResponseStatus.OK : HttpResponseStatus.BAD_REQUEST;
+        var response = new DefaultFullHttpResponse(request.protocolVersion(), status, request.content().retain());
+        response.headers()
+                .set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8")
+                .setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
 
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
-
-        if (msg instanceof HttpRequest) {
-            HttpRequest request = this.request = (HttpRequest) msg;
+        if (HttpUtil.isKeepAlive(request)) {
+            response.headers().set(HttpHeaderNames.CONNECTION, "keep-alive");
+            ctx.writeAndFlush(response);
+        } else {
+            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
         }
-
-        buf.setLength(0);
-
-        if (msg instanceof HttpContent) {
-            HttpContent httpContent = (HttpContent) msg;
-
-            ByteBuf content = httpContent.content();
-            if (content.isReadable()) {
-                buf.append(content.toString(CharsetUtil.UTF_8));
-                buf.append("\r\n");
-            }
-
-            if (msg instanceof LastHttpContent) {
-                LastHttpContent trailer = (LastHttpContent) msg;
-
-                if (!writeResponse(trailer, ctx)) {
-                    // If keep-alive is off, close the connection once the content is fully written.
-                    ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-                }
-            }
-        }
-        System.out.print("*");
-    }
-
-    private boolean writeResponse(HttpObject currentObj, ChannelHandlerContext ctx) {
-        // Decide whether to close the connection or not.
-        boolean keepAlive = HttpHeaders.isKeepAlive(request);
-        // Build the response object.
-        FullHttpResponse response = new DefaultFullHttpResponse(
-                HTTP_1_1, currentObj.getDecoderResult().isSuccess() ? OK : BAD_REQUEST,
-                Unpooled.copiedBuffer(buf.toString(), CharsetUtil.UTF_8));
-
-        response.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
-
-        if (keepAlive) {
-            // Add 'Content-Length' header only for a keep-alive connection.
-            response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
-            // Add keep alive header as per:
-            // - http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
-            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
-        }
-
-        // Encode the cookie.
-        String cookieString = request.headers().get(COOKIE);
-        if (cookieString != null) {
-            Set<Cookie> cookies = CookieDecoder.decode(cookieString);
-            if (!cookies.isEmpty()) {
-                // Reset the cookies if necessary.
-                for (Cookie cookie : cookies) {
-                    response.headers().add(SET_COOKIE, ServerCookieEncoder.encode(cookie));
-                }
-            }
-        }
-
-        // Write the response.
-        ctx.write(response);
-
-        return keepAlive;
-    }
-
-    private static void send100Continue(ChannelHandlerContext ctx) {
-        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, CONTINUE);
-        ctx.write(response);
     }
 
     @Override

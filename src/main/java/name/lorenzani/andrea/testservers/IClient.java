@@ -1,25 +1,23 @@
-/***
-*   Copyright 2017 Andrea Lorenzani
-*
-*   Licensed under the Apache License, Version 2.0 (the "License");
-*   you may not use this file except in compliance with the License.
-*   You may obtain a copy of the License at
-*
-*       http://www.apache.org/licenses/LICENSE-2.0
-*
-*   Unless required by applicable law or agreed to in writing, software
-*   distributed under the License is distributed on an "AS IS" BASIS,
-*   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*   See the License for the specific language governing permissions and
-*   limitations under the License.
-*
-***/
-
 package name.lorenzani.andrea.testservers;
 
-public interface IClient {
+/** A client that sends a message to an echo server and checks that the same message comes back. */
+public interface IClient extends AutoCloseable {
+
+    /** Messages are truncated to this many characters so they fit the default 4MB limits of both servers. */
+    int MAX_MESSAGE_LENGTH = 4_000_000;
+
     default String getName() {
-        return this.getClass().getSimpleName();
+        return getClass().getSimpleName();
     }
+
+    /** @return true if the server echoed back exactly {@code content} */
     boolean sendPost(String content) throws Exception;
+
+    @Override
+    default void close() throws Exception {
+    }
+
+    static String truncate(String content) {
+        return content.length() > MAX_MESSAGE_LENGTH ? content.substring(0, MAX_MESSAGE_LENGTH) : content;
+    }
 }
